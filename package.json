@@ -1,0 +1,15 @@
+{
+    "name": "ucryptocurrencyrate_bot",
+    "version": "1.0.0",
+    "description": "Telegram bot that shows cryptocurrency rates",
+    "main": "bot.js",
+    "scripts": {
+        "start": "node bot.js"
+    },
+    "dependencies": {
+        "axios": "^1.4.0",
+        "dotenv": "^10.0.0",
+        "node-schedule": "^2.1.0",
+        "node-telegram-bot-api": "^0.54.0"
+    }
+}
