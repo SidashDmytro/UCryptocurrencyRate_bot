@@ -114,7 +114,7 @@ async function printCryptocurrenciesList(chatId, showPercent) {
                 let text = (showPercent) ? 'Доброго крипто-ранку 🌞 \n' : '';
                 let entries = Object.entries(obj);
 
-                if (showPercent) {
+                if (!showPercent) {
                     for (let i = 0; i < entries.length; i++) {
                         text += `${entries[i][0]}: $${entries[i][1]['price']}\n`
                     }

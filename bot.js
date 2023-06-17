@@ -70,7 +70,6 @@ let job = new CronJob(
     async function () {
         try {
             let allUsers = await getAllUsers();
-            console.log(allUsers);
             for (let user of allUsers) {
                 try {
                     console.log(user);
