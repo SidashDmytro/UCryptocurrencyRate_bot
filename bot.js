@@ -1,23 +1,94 @@
 require('dotenv').config();
-const { getCryptocurrencyRate } = require('./functions');
+const { getUser, createUser, updateStatus, addOrDeleteCryptocurrency, printCryptocurrenciesList, getAllUsers } = require('./functions');
 const TelegramBot = require('node-telegram-bot-api');
+const CronJob = require('cron').CronJob;
 const token = process.env.TELEGRAM_BOT_TOKEN;
 const bot = new TelegramBot(token, { polling: true });
+const txt = require('./txt.json');
 
-bot.on('message', msg => {
+const keyboard = {
+    reply_markup: {
+        keyboard: [
+            [{ text: txt.buttons.checkBtn }, { text: txt.buttons.addBtn }, { text: txt.buttons.deleteBtn }]
+        ],
+        resize_keyboard: true,
+    }
+};
+
+bot.on('polling_error', (error) => {
+    console.error('[polling_error]', error);
+});
+
+bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
-    const cryptocurrencies = ['BTC', 'ETC', 'WLKN']; // following cryptocurrencies
+    const message = msg.text.toString();
 
-    getCryptocurrencyRate(cryptocurrencies)
-        .then(obj => {
-            let text = '';
-            let entries = Object.entries(obj);
-            let length = entries.length;
+    switch (message) {
+        case txt.commands.start:
+            try {
+                if (await getUser(chatId) === null) { // if the user doesn't exist
+                    await createUser(chatId, ['BTC', 'ETH']); // create user with start list of cryptocurrencies 
 
-            for (let i = 0; i < length; i++) {
-                text += `${entries[i][0]}: $${entries[i][1]}\n`
+                    bot.sendMessage(chatId, txt.messages.startMsg, { parse_mode: 'Markdown', reply_markup: keyboard.reply_markup });
+                    // await showCryptocurrenciesList(startSymbols, chatId);
+                } else {
+                    bot.sendMessage(chatId, txt.messages.defaultMsg, { parse_mode: 'Markdown', reply_markup: keyboard.reply_markup });
+                }
+            } catch (error) {
+                console.error(error);
             }
-            bot.sendMessage(chatId, text);
-        })
-        .catch(error => console.error(error));
+            break;
+        case txt.buttons.checkBtn:
+            bot.sendMessage(chatId, await printCryptocurrenciesList(chatId), keyboard);
+            await updateStatus(chatId, 'default');
+            break;
+        case txt.buttons.addBtn:
+            bot.sendMessage(chatId, txt.messages.addMsg, { reply_markup: keyboard.reply_markup });
+            await updateStatus(chatId, 'add');
+            break;
+        case txt.buttons.deleteBtn:
+            bot.sendMessage(chatId, txt.messages.deleteMsg, { reply_markup: keyboard.reply_markup });
+            await updateStatus(chatId, 'delete');
+            break;
+        default:
+            const result = await getUser(chatId);
+            switch (result['status']) {
+                case 'add':
+                    bot.sendMessage(chatId, await addOrDeleteCryptocurrency(msg, 'add'), keyboard);
+                    break;
+                case 'delete':
+                    bot.sendMessage(chatId, await addOrDeleteCryptocurrency(msg, 'delete'), keyboard);
+                    break;
+                default:
+                    bot.sendMessage(chatId, txt.messages.defaultMsg, { reply_markup: keyboard.reply_markup });
+                    break;
+            }
+            break;
+    }
 })
+
+let job = new CronJob(
+    '0 9 * * *',
+    async function () {
+        try {
+            let allUsers = await getAllUsers();
+            console.log(allUsers);
+            for (let user of allUsers) {
+                try {
+                    console.log(user);
+                    await bot.sendMessage(user, await printCryptocurrenciesList(user), keyboard);
+                }
+                catch (error) {
+                    console.log(`Error sending message to user ${user}: `, error);
+                }
+            }
+
+        } catch (error) {
+            console.error(error);
+        }
+    },
+    null,
+    false
+);
+
+job.start();
