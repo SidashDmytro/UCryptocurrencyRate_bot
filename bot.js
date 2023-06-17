@@ -28,9 +28,7 @@ bot.on('message', async (msg) => {
             try {
                 if (await getUser(chatId) === null) { // if the user doesn't exist
                     await createUser(chatId, ['BTC', 'ETH']); // create user with start list of cryptocurrencies 
-
                     bot.sendMessage(chatId, txt.messages.startMsg, { parse_mode: 'Markdown', reply_markup: keyboard.reply_markup });
-                    // await showCryptocurrenciesList(startSymbols, chatId);
                 } else {
                     bot.sendMessage(chatId, txt.messages.defaultMsg, { parse_mode: 'Markdown', reply_markup: keyboard.reply_markup });
                 }
@@ -39,7 +37,7 @@ bot.on('message', async (msg) => {
             }
             break;
         case txt.buttons.checkBtn:
-            bot.sendMessage(chatId, await printCryptocurrenciesList(chatId), keyboard);
+            bot.sendMessage(chatId, await printCryptocurrenciesList(chatId, false), keyboard);
             await updateStatus(chatId, 'default');
             break;
         case txt.buttons.addBtn:
@@ -76,7 +74,7 @@ let job = new CronJob(
             for (let user of allUsers) {
                 try {
                     console.log(user);
-                    await bot.sendMessage(user, await printCryptocurrenciesList(user), keyboard);
+                    await bot.sendMessage(user, await printCryptocurrenciesList(user, true), keyboard);
                 }
                 catch (error) {
                     console.log(`Error sending message to user ${user}: `, error);

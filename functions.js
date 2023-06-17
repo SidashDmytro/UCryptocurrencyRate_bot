@@ -95,7 +95,7 @@ async function addOrDeleteCryptocurrency(msg, action) {
         const isExist = await isCryptocurrencyExist(symbol);
 
         if (!isExist) {
-            return `Вы допустили ошибку, криптовалюта '${symbol}' не существует. Исправьте ошибку и повторите ввод`;
+            return `Ви припустилися помилки, криптовалюта '${symbol}' не існує. Виправте помилку і повторіть свій запит`;
         }
         await updateListOfCryptocurrencies(chatId, symbol, action);
         await updateStatus(chatId, 'default');
@@ -105,20 +105,26 @@ async function addOrDeleteCryptocurrency(msg, action) {
     }
 }
 
-async function printCryptocurrenciesList(chatId) {
+async function printCryptocurrenciesList(chatId, showPercent) {
     try {
         const result = await getUser(chatId);
         if (result !== null) {
             try {
                 const obj = await getCryptocurrencyRate(result['symbols']);
-                let text = '';
+                let text = (showPercent) ? 'Доброго крипто-ранку 🌞 \n' : '';
                 let entries = Object.entries(obj);
 
-                for (let i = 0; i < entries.length; i++) {
-                    let percentChange = +entries[i][1]['percent_change_24h'];
-                    let percentPrint = (percentChange < 0) ? `${percentChange}% 🔻` : `${percentChange}% ⬆︎`
+                if (showPercent) {
+                    for (let i = 0; i < entries.length; i++) {
+                        text += `${entries[i][0]}: $${entries[i][1]['price']}\n`
+                    }
+                } else {
+                    for (let i = 0; i < entries.length; i++) {
+                        let percentChange = +entries[i][1]['percent_change_24h'];
+                        let percentPrint = (percentChange < 0) ? `${percentChange}% 🔻` : `${percentChange}% ⬆︎`
 
-                    text += `${entries[i][0]}: $${entries[i][1]['price']} (${percentPrint})\n`
+                        text += `${entries[i][0]}: $${entries[i][1]['price']} (${percentPrint})\n`
+                    }
                 }
 
                 return text;
@@ -126,7 +132,7 @@ async function printCryptocurrenciesList(chatId) {
                 console.error(error)
             }
         } else {
-            return 'Пользователь не существует';
+            return 'Користувач не існує';
         }
     } catch (error) {
         console.error(error)
