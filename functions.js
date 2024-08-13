@@ -45,7 +45,7 @@ async function updateListOfCryptocurrencies(id, cryptocurrency, action) {
     }
 }
 
-async function getCryptocurrencyRate(cryptocurrencies) { // cryptocurrencies - is an array
+async function getCryptocurrencyRate(cryptocurrencies) {
     let listCurrencies = cryptocurrencies.join(',');
     let apiUrl = `https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=${listCurrencies}`;
 
@@ -60,9 +60,10 @@ async function getCryptocurrencyRate(cryptocurrencies) { // cryptocurrencies - i
         const obj = {};
 
         for (let i = 0; i < cryptocurrencies.length; i++) {
+            let currencyData = json.data[cryptocurrencies[i]]['quote']['USD'];
             obj[cryptocurrencies[i]] = {
-                price: json.data[cryptocurrencies[i]]['quote']['USD']['price'].toFixed(2),
-                percent_change_24h: json.data[cryptocurrencies[i]]['quote']['USD']['percent_change_24h'].toFixed(2),
+                price: currencyData.price ? currencyData.price.toFixed(2) : 'N/A',
+                percent_change_24h: currencyData.percent_change_24h ? currencyData.percent_change_24h.toFixed(2) : 'N/A',
             };
         }
 
@@ -72,6 +73,7 @@ async function getCryptocurrencyRate(cryptocurrencies) { // cryptocurrencies - i
         throw error;
     }
 }
+
 
 async function isCryptocurrencyExist(cryptocurrency) {
     let apiUrl = `https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=${cryptocurrency}`;
@@ -116,28 +118,34 @@ async function printCryptocurrenciesList(chatId, showPercent) {
 
                 if (!showPercent) {
                     for (let i = 0; i < entries.length; i++) {
-                        text += `${entries[i][0]}: $${entries[i][1]['price']}\n`
+                        text += `${entries[i][0]}: $${entries[i][1]['price']}\n`;
                     }
                 } else {
                     for (let i = 0; i < entries.length; i++) {
                         let percentChange = +entries[i][1]['percent_change_24h'];
-                        let percentPrint = (percentChange < 0) ? `${percentChange}% 🔻` : `${percentChange}% ⬆︎`
-
-                        text += `${entries[i][0]}: $${entries[i][1]['price']} (${percentPrint})\n`
+                        let percentPrint = (percentChange < 0) ? `${percentChange}% 🔻` : `${percentChange}% ⬆︎`;
+                        text += `${entries[i][0]}: $${entries[i][1]['price']} (${percentPrint})\n`;
                     }
+                }
+
+                if (text.trim() === '') {
+                    return 'Нет данных для отображения';
                 }
 
                 return text;
             } catch (error) {
-                console.error(error)
+                console.error(error);
+                return 'Ошибка при получении данных о криптовалютах';
             }
         } else {
             return 'Користувач не існує';
         }
     } catch (error) {
-        console.error(error)
+        console.error(error);
+        return 'Ошибка при получении данных о пользователе';
     }
 }
+
 
 
 module.exports = { getCryptocurrencyRate, getUser, updateListOfCryptocurrencies, createUser, isCryptocurrencyExist, updateStatus, addOrDeleteCryptocurrency, printCryptocurrenciesList, getAllUsers };
